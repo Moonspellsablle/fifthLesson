@@ -1,7 +1,6 @@
 #include <iostream>
-#include <stdint.h>
-#include <cmath>
-
+#include <cstdint>
+ 
 bool isOperationNeedToProceed(char *userInput, const char *command) {
   for (size_t i = 0; command[i] != '\0'; ++i) {
     if ((command[i] != userInput[i])) {
@@ -10,7 +9,135 @@ bool isOperationNeedToProceed(char *userInput, const char *command) {
   }
   return true;
 }
+ 
+uint16_t getArrayLen(char *arrayOfData) {
+  uint16_t i = 0;
+  while (arrayOfData[i] != '\0') {
+    ++i;
+  }
+  return i;
+}
+ 
+void *clearArray(char *buffer, uint16_t value, uint16_t len) {
+  char *p = buffer;
+  for (; len > 0; ++p, --len) {
+    *p = value;
+  }
+  return buffer;
+}
 
+void printLogic(char *mainBuffer, const uint16_t BUFFER_SIZE, char *beginOfMainBuffer, char *endOfMainBuffer, int16_t &movePosition) {
+  char userValue[BUFFER_SIZE];
+  uint16_t lenOfBuffer = getArrayLen(mainBuffer);
+
+  std::cin >> userValue;
+  uint16_t lenOfUserData = getArrayLen(userValue);
+ 
+  if ((beginOfMainBuffer == nullptr) || (endOfMainBuffer == nullptr)) {
+    beginOfMainBuffer = (mainBuffer + lenOfBuffer);
+    endOfMainBuffer = mainBuffer + lenOfBuffer + (lenOfUserData - 1);
+  } else {
+    beginOfMainBuffer = mainBuffer + movePosition;
+  }
+
+  char leftPartOfBuffer[BUFFER_SIZE];
+  char rightPartOfBuffer[BUFFER_SIZE];
+
+  uint8_t i = 0;
+  clearArray(leftPartOfBuffer, 0, sizeof leftPartOfBuffer);
+  for (char *leftPart = mainBuffer; leftPart < beginOfMainBuffer; ++leftPart, ++i) {
+    leftPartOfBuffer[i] = *leftPart;
+  }
+  
+  i = 0;
+  clearArray(rightPartOfBuffer, 0, sizeof rightPartOfBuffer);
+  for (char *rightPart = beginOfMainBuffer; rightPart < (mainBuffer + lenOfBuffer); ++rightPart, ++i) {
+    rightPartOfBuffer[i] = *rightPart;
+  }
+  std::cout <<  "leftPart: " << leftPartOfBuffer << std::endl;
+  std::cout <<  "rightPart: " << rightPartOfBuffer << std::endl;
+
+  if (getArrayLen(rightPartOfBuffer) > 0) {
+    clearArray(mainBuffer, 0, sizeof mainBuffer);
+    char *mainBufferPtr = mainBuffer;
+    for (char *leftPartPtr = leftPartOfBuffer; leftPartPtr < leftPartOfBuffer + getArrayLen(leftPartOfBuffer); ++leftPartPtr, ++mainBufferPtr) {
+      *mainBufferPtr = *leftPartPtr;
+    }
+    for (char *userInputPtr = userValue; userInputPtr < userValue + getArrayLen(userValue); ++userInputPtr, ++mainBufferPtr) {
+      *mainBufferPtr = *userInputPtr;
+    }
+    for (char *rightPartPtr = rightPartOfBuffer; rightPartPtr < rightPartOfBuffer + getArrayLen(rightPartOfBuffer); ++rightPartPtr, ++mainBufferPtr) {
+      *mainBufferPtr = *rightPartPtr;
+    }
+    movePosition += getArrayLen(userValue);
+  } else {
+    for (char *beginUserValue = userValue; beginUserValue < (userValue + lenOfUserData); ++beginUserValue) {
+      *beginOfMainBuffer = *beginUserValue;
+      ++beginOfMainBuffer;
+    }
+    movePosition = getArrayLen(mainBuffer);
+  }
+
+  std::cout << mainBuffer << std::endl;
+}
+
+void clearLogic(char *mainBuffer, char *beginOfMainBuffer, char *endOfMainBuffer, int16_t &movePosition) {
+  clearArray(mainBuffer, 0, sizeof mainBuffer);
+  movePosition = 0;
+  beginOfMainBuffer = nullptr;
+  endOfMainBuffer = nullptr;
+  std::cout << "***Cleared***" << std::endl;
+}
+    
+void moveLogic(char *mainBuffer, const uint16_t BUFFER_SIZE, char *beginOfMainBuffer, char *endOfMainBuffer, int16_t &movePosition) {
+  char direction[BUFFER_SIZE];
+  uint16_t userValue;
+  uint16_t lenOfBuffer = getArrayLen(mainBuffer);  
+
+  std::cin >> direction >> userValue;
+  if (isOperationNeedToProceed(direction, "left")) {
+    std::cout << "move position: " << movePosition << std::endl;
+    movePosition -= userValue;
+    std::cout << "move position: " << movePosition << std::endl;
+    if (movePosition < 0) {
+      movePosition = 0;
+    }
+  } else if (isOperationNeedToProceed(direction, "right")) {
+    movePosition += userValue;
+    if (movePosition > lenOfBuffer) {
+      movePosition = lenOfBuffer;
+    }
+  }
+}  
+  
+void dialogueWithUser(char *operationFromUser) {
+  if (!(std::cin >> operationFromUser)
+  || (!(isOperationNeedToProceed(operationFromUser, "print"))
+  && !(isOperationNeedToProceed(operationFromUser, "select"))
+  && !(isOperationNeedToProceed(operationFromUser, "copy"))
+  && !(isOperationNeedToProceed(operationFromUser, "paste"))
+  && !(isOperationNeedToProceed(operationFromUser, "move"))
+  && !(isOperationNeedToProceed(operationFromUser, "cut"))
+  && !(isOperationNeedToProceed(operationFromUser, "show"))
+  && !(isOperationNeedToProceed(operationFromUser, "clear")))) {
+    std::cout << "\n[You can use only following commands]:"
+    << std::endl << "print"
+    << std::endl << "select [startRangeValue] [endRangeValue]"
+    << std::endl << "copy"
+    << std::endl << "paste"
+    << std::endl << "move left [value]"
+    << std::endl << "move right [value]"
+    << std::endl << "cut"
+    << std::endl << "show"
+    << std::endl
+    << std::endl << "Enter an operation again!: "
+    << std::endl;
+    std::cin.clear();
+    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n' );
+    }
+}
+     
+ 
 int main() {
   const char printCommand[] = "print";
   const char selectCommand[] = "select";
@@ -20,44 +147,45 @@ int main() {
   const char cutCommand[] = "cut";
   const char showCommand[] = "show";
   const char clearCommand[] = "clear";
-
+ 
+  int16_t movePosition = 0;
+ 
+  const uint16_t BUFFER_SIZE = 100;
+  char mainBuffer[BUFFER_SIZE]{};
+  uint16_t lenOfBuffer;
+  uint16_t lenOfUserData;
+ 
+  char *beginOfMainBuffer = nullptr;
+  char *endOfMainBuffer = nullptr;
+ 
   while (1) {
     std::cout << "Enter an operation to proceed: ";
-    char operationFromUser[100];
-    //char valueFormUser[100];
-    if (!(std::cin >> operationFromUser) 
-    || (!(isOperationNeedToProceed(operationFromUser, printCommand))
-    && !(isOperationNeedToProceed(operationFromUser, selectCommand))
-    && !(isOperationNeedToProceed(operationFromUser, copyCommand))
-    && !(isOperationNeedToProceed(operationFromUser, pasteCommand))
-    && !(isOperationNeedToProceed(operationFromUser, moveCommand))
-    && !(isOperationNeedToProceed(operationFromUser, cutCommand))
-    && !(isOperationNeedToProceed(operationFromUser, showCommand))
-    && !(isOperationNeedToProceed(operationFromUser, clearCommand)))) {
-      std::cout << "\n[You can use only following commands]:" 
-      << std::endl << "print" 
-      << std::endl << "select" 
-      << std::endl << "copy" 
-      << std::endl << "paste" 
-      << std::endl << "move left" 
-      << std::endl << "move right" 
-      << std::endl << "cut" 
-      << std::endl << "show"
-      << std::endl
-      << std::endl << "Enter an operation again!: "
-      << std::endl;
-      std::cin.clear();
-      //std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n' );
+    char operationFromUser[BUFFER_SIZE];
+    dialogueWithUser(operationFromUser);
+
+
+    if (isOperationNeedToProceed(operationFromUser, printCommand)) {
+      printLogic(mainBuffer, BUFFER_SIZE, beginOfMainBuffer, endOfMainBuffer, movePosition);
     }
-    if (isOperationNeedToProceed(operationFromUser, printCommand) || 
-        isOperationNeedToProceed(operationFromUser, selectCommand) || 
-        isOperationNeedToProceed(operationFromUser, moveCommand)) {
-      char valueFormUser[100];
-      if (std::cin >> valueFormUser) {
-        std::cout << "Need to implement Facking Logic! Facking shit!" << std::endl;
-      }
-    }   
+   
+    if (isOperationNeedToProceed(operationFromUser, clearCommand)) {
+      clearLogic(mainBuffer, beginOfMainBuffer, endOfMainBuffer, movePosition);
+    }
+ 
+    if (isOperationNeedToProceed(operationFromUser, showCommand)) {
+      std::cout << mainBuffer << std::endl;
+    }
+
+    if (isOperationNeedToProceed(operationFromUser, moveCommand)) {
+      moveLogic(mainBuffer, BUFFER_SIZE, beginOfMainBuffer, endOfMainBuffer, movePosition);
+      lenOfBuffer = getArrayLen(mainBuffer);  
+      beginOfMainBuffer = mainBuffer + movePosition;
+      endOfMainBuffer = mainBuffer + lenOfBuffer;
+      std::cout << "movePosition: " << movePosition << std::endl;
+      std::cout << "lenOfBuffer: " << lenOfBuffer << std::endl;
+      std::cout << "begin: " << beginOfMainBuffer << " end: " << endOfMainBuffer << std::endl;  
+    }
   }
-  
   return 0;
 }
+ 
