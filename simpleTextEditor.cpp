@@ -26,11 +26,9 @@ void *clearArray(char *buffer, uint16_t value, uint16_t len) {
   return buffer;
 }
 
-void printLogic(char *mainBuffer, const uint16_t &BUFFER_SIZE, char *beginOfMainBuffer, char *endOfMainBuffer, int16_t &movePosition) {
-  char userValue[BUFFER_SIZE];
+void printLogic(char *mainBuffer, char *userValue, const uint16_t &BUFFER_SIZE, char *beginOfMainBuffer, char *endOfMainBuffer, int16_t &movePosition) {
+  
   uint16_t lenOfBuffer = getArrayLen(mainBuffer);
-
-  std::cin >> userValue;
   uint16_t lenOfUserData = getArrayLen(userValue);
  
   if ((beginOfMainBuffer == nullptr) || (endOfMainBuffer == nullptr)) {
@@ -208,7 +206,9 @@ int main() {
 
 
     if (isOperationNeedToProceed(operationFromUser, printCommand)) {
-      printLogic(mainBuffer, BUFFER_SIZE, beginOfMainBuffer, endOfMainBuffer, movePosition);
+      char userValue[BUFFER_SIZE]{};
+      std::cin >> userValue;
+      printLogic(mainBuffer, userValue, BUFFER_SIZE, beginOfMainBuffer, endOfMainBuffer, movePosition);
     }
    
     if (isOperationNeedToProceed(operationFromUser, clearCommand)) {
@@ -242,6 +242,10 @@ int main() {
     if (isOperationNeedToProceed(operationFromUser, cutCommand)) {
       copyLogic(mainBuffer, bufferForCopyPaste, leftPosition, rightPosition);
       cutLogic(mainBuffer, BUFFER_SIZE, leftPosition, rightPosition, movePosition, lenOfBuffer, beginOfMainBuffer, endOfMainBuffer);
+    }
+
+    if (isOperationNeedToProceed(operationFromUser, pasteCommand)) {
+      printLogic(mainBuffer, bufferForCopyPaste, BUFFER_SIZE, beginOfMainBuffer, endOfMainBuffer, movePosition);
     }
   }
   return 0;
