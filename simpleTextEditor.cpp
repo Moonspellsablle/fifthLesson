@@ -41,22 +41,22 @@ void printLogic(char *mainBuffer, char *userValue, const uint16_t &BUFFER_SIZE, 
   char leftPartOfBuffer[BUFFER_SIZE];
   char rightPartOfBuffer[BUFFER_SIZE];
 
-  uint8_t i = 0;
-  clearArray(leftPartOfBuffer, 0, sizeof leftPartOfBuffer);
+  uint16_t i = 0;
+  clearArray(leftPartOfBuffer, 0, sizeof(leftPartOfBuffer));
   for (char *leftPart = mainBuffer; leftPart < beginOfMainBuffer; ++leftPart, ++i) {
     leftPartOfBuffer[i] = *leftPart;
   }
   
   i = 0;
-  clearArray(rightPartOfBuffer, 0, sizeof rightPartOfBuffer);
+  clearArray(rightPartOfBuffer, 0, sizeof(rightPartOfBuffer));
   for (char *rightPart = beginOfMainBuffer; rightPart < (mainBuffer + lenOfBuffer); ++rightPart, ++i) {
     rightPartOfBuffer[i] = *rightPart;
   }
-  std::cout <<  "leftPart: " << leftPartOfBuffer << std::endl;
-  std::cout <<  "rightPart: " << rightPartOfBuffer << std::endl;
+  //std::cout <<  "leftPart: " << leftPartOfBuffer << std::endl;
+  //std::cout <<  "rightPart: " << rightPartOfBuffer << std::endl;
 
   if (getArrayLen(rightPartOfBuffer) > 0) {
-    clearArray(mainBuffer, 0, sizeof mainBuffer);
+    clearArray(mainBuffer, 0, sizeof(mainBuffer));
     char *mainBufferPtr = mainBuffer;
     for (char *leftPartPtr = leftPartOfBuffer; leftPartPtr < leftPartOfBuffer + getArrayLen(leftPartOfBuffer); ++leftPartPtr, ++mainBufferPtr) {
       *mainBufferPtr = *leftPartPtr;
@@ -80,14 +80,14 @@ void printLogic(char *mainBuffer, char *userValue, const uint16_t &BUFFER_SIZE, 
 }
 
 void clearLogic(char *mainBuffer, char *beginOfMainBuffer, char *endOfMainBuffer, int16_t &movePosition) {
-  clearArray(mainBuffer, 0, sizeof mainBuffer);
+  clearArray(mainBuffer, 0, getArrayLen(mainBuffer));
   movePosition = 0;
   beginOfMainBuffer = nullptr;
   endOfMainBuffer = nullptr;
   std::cout << "***Cleared***" << std::endl;
 }
     
-void moveLogic(char *mainBuffer, const uint16_t &BUFFER_SIZE, char *beginOfMainBuffer, char *endOfMainBuffer, int16_t &movePosition) {
+void moveLogic(char *mainBuffer, const uint16_t &BUFFER_SIZE, int16_t &movePosition) {
   char direction[BUFFER_SIZE];
   uint16_t userValue;
   uint16_t lenOfBuffer = getArrayLen(mainBuffer);  
@@ -109,7 +109,7 @@ void moveLogic(char *mainBuffer, const uint16_t &BUFFER_SIZE, char *beginOfMainB
 }
 
 void copyLogic(char *mainBuffer, char *bufferForCopyPaste, uint16_t &leftPosition, uint16_t &rightPosition) {
-  clearArray(bufferForCopyPaste, 0, sizeof bufferForCopyPaste);
+  clearArray(bufferForCopyPaste, 0, getArrayLen(bufferForCopyPaste));
   if (leftPosition < rightPosition) {
     if (leftPosition < 1) {
       leftPosition = 1;
@@ -120,7 +120,7 @@ void copyLogic(char *mainBuffer, char *bufferForCopyPaste, uint16_t &leftPositio
     for (char *charBufferPtr = (mainBuffer + (leftPosition - 1)), *copiedBufferPtr = bufferForCopyPaste; charBufferPtr <= (mainBuffer + (rightPosition - 1)); ++charBufferPtr, ++copiedBufferPtr) {
       *copiedBufferPtr = *charBufferPtr;
     }
-    //std::cout <<"***SaveToBuffer***\t" << bufferForCopyPaste << std::endl;
+    std::cout <<"***SaveToBuffer***\t" << bufferForCopyPaste << std::endl;
   }
 }
 
@@ -128,21 +128,23 @@ void cutLogic(char *mainBuffer, const uint16_t &BUFFER_SIZE, uint16_t &leftPosit
   char tempNewBuffer[BUFFER_SIZE];
   uint16_t i = 1;
   for (char *bufferPtr = mainBuffer, *tempNewBufferPtr = tempNewBuffer; bufferPtr < mainBuffer + getArrayLen(mainBuffer); ++bufferPtr, ++i){
-    if (((i > 0) && (i < leftPosition)) || ((i > rightPosition) && (i <= getArrayLen(mainBuffer)))) {
+    if ((i < leftPosition) || ((i > rightPosition) && (i <= getArrayLen(mainBuffer)))) {
       *tempNewBufferPtr = *bufferPtr;
+      //std::cout << "bufferPtr: " << *bufferPtr << std::endl;
       ++tempNewBufferPtr;
     }
   }
-  clearArray(mainBuffer, 0, sizeof mainBuffer);
+  std::cout << "tempNewBuffer: " << tempNewBuffer << std::endl;
+  clearArray(mainBuffer, 0, getArrayLen(mainBuffer));
   for (char *bufferPtr = mainBuffer, *tempNewBufferPtr = tempNewBuffer; tempNewBufferPtr < tempNewBuffer + getArrayLen(tempNewBuffer); ++bufferPtr, ++tempNewBufferPtr) {
     *bufferPtr = *tempNewBufferPtr;
   }
-  std::cout << tempNewBuffer << std::endl;
+  //std::cout << tempNewBuffer << std::endl;
   if (movePosition > rightPosition) {
     beginOfMainBuffer = mainBuffer + (movePosition - (rightPosition - leftPosition + 1));
     endOfMainBuffer = mainBuffer + (lenOfBuffer - (rightPosition - leftPosition + 1));
     movePosition -= (rightPosition - leftPosition + 1);
-    std::cout << movePosition << std::endl;
+    //std::cout << movePosition << std::endl;
   }
 }
   
@@ -155,7 +157,8 @@ void dialogueWithUser(char *operationFromUser) {
   && !(isOperationNeedToProceed(operationFromUser, "move"))
   && !(isOperationNeedToProceed(operationFromUser, "cut"))
   && !(isOperationNeedToProceed(operationFromUser, "show"))
-  && !(isOperationNeedToProceed(operationFromUser, "clear")))) {
+  && !(isOperationNeedToProceed(operationFromUser, "clear"))
+  && !(isOperationNeedToProceed(operationFromUser, "exit")))) {
     std::cout << "\n[You can use only following commands]:"
     << std::endl << "print"
     << std::endl << "select [startRangeValue] [endRangeValue]"
@@ -165,6 +168,8 @@ void dialogueWithUser(char *operationFromUser) {
     << std::endl << "move right [value]"
     << std::endl << "cut"
     << std::endl << "show"
+    << std::endl << "clear"
+    << std::endl << "exit"
     << std::endl
     << std::endl << "Enter an operation again!: "
     << std::endl;
@@ -183,13 +188,13 @@ int main() {
   const char cutCommand[] = "cut";
   const char showCommand[] = "show";
   const char clearCommand[] = "clear";
+  const char exitCommand[] = "exit";
  
   int16_t movePosition = 0;
  
   const uint16_t BUFFER_SIZE = 100;
   char mainBuffer[BUFFER_SIZE]{};
   uint16_t lenOfBuffer;
-  uint16_t lenOfUserData;
  
   char *beginOfMainBuffer = nullptr;
   char *endOfMainBuffer = nullptr;
@@ -220,13 +225,13 @@ int main() {
     }
 
     if (isOperationNeedToProceed(operationFromUser, moveCommand)) {
-      moveLogic(mainBuffer, BUFFER_SIZE, beginOfMainBuffer, endOfMainBuffer, movePosition);
+      moveLogic(mainBuffer, BUFFER_SIZE, movePosition);
       lenOfBuffer = getArrayLen(mainBuffer);  
       beginOfMainBuffer = mainBuffer + movePosition;
       endOfMainBuffer = mainBuffer + lenOfBuffer;
-      std::cout << "movePosition: " << movePosition << std::endl;
-      std::cout << "lenOfBuffer: " << lenOfBuffer << std::endl;
-      std::cout << "begin: " << beginOfMainBuffer << " end: " << endOfMainBuffer << std::endl;  
+      //std::cout << "movePosition: " << movePosition << std::endl;
+      //std::cout << "lenOfBuffer: " << lenOfBuffer << std::endl;
+      //std::cout << "begin: " << beginOfMainBuffer << " end: " << endOfMainBuffer << std::endl;  
     }
 
     if (isOperationNeedToProceed(operationFromUser, selectCommand)) {
@@ -246,6 +251,11 @@ int main() {
 
     if (isOperationNeedToProceed(operationFromUser, pasteCommand)) {
       printLogic(mainBuffer, bufferForCopyPaste, BUFFER_SIZE, beginOfMainBuffer, endOfMainBuffer, movePosition);
+    }
+
+    if (isOperationNeedToProceed(operationFromUser, exitCommand)) {
+      std::cout << "***Have a nice day***" << std::endl;
+      break;
     }
   }
   return 0;
